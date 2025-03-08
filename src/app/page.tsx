@@ -1,101 +1,115 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { NewsArticle } from '@/lib/news/brave-api';
+
+interface GeneratedDiary {
+  date: string;
+  content: string;
+  newsReferences: NewsArticle[];
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [keywords, setKeywords] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [diary, setDiary] = useState<GeneratedDiary | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/diary/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          keywords: keywords.split(',').map(k => k.trim()),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate diary');
+      }
+
+      const data = await response.json();
+      setDiary(data);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">KIYOSHI DIARY</h1>
+          <p className="text-gray-600">ニュースから面白おかしい日記を自動生成するだべ！</p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="mb-8">
+          <div className="flex gap-4">
+            <input
+              type="text"
+              value={keywords}
+              onChange={(e) => setKeywords(e.target.value)}
+              placeholder="キーワードをカンマ区切りで入力（例：AI, 宇宙, イカ）"
+              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isLoading}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            >
+              {isLoading ? '生成中...' : '日記を生成'}
+            </button>
+          </div>
+        </form>
+
+        {error && (
+          <div className="p-4 mb-8 bg-red-100 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {diary && (
+          <article className="prose prose-slate max-w-none">
+            <div className="mb-8 p-6 bg-white rounded-lg shadow-lg">
+              <time className="text-sm text-gray-500">
+                {new Date(diary.date).toLocaleDateString('ja-JP')}
+              </time>
+              <div className="mt-4 whitespace-pre-wrap">{diary.content}</div>
+            </div>
+
+            <div className="mt-8">
+              <h2 className="text-xl font-bold mb-4">参考ニュース</h2>
+              <ul className="space-y-4">
+                {diary.newsReferences.map((news, index) => (
+                  <li key={index} className="p-4 bg-gray-50 rounded-lg">
+                    <a
+                      href={news.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      {news.title}
+                    </a>
+                    <p className="text-sm text-gray-600 mt-1">{news.description}</p>
+                    <p className="text-xs text-gray-500 mt-1">出典: {news.source}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        )}
+      </div>
+    </main>
   );
 }
