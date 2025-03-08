@@ -1,0 +1,19 @@
+name = "kiyoshi-diary"
+compatibility_date = "2024-03-07"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kiyoshi_diary_prod"
+database_id = "69a08708-e62d-4e7e-ab10-8816f73d73f4"
+
+# LINE BOT用の設定
+[triggers]
+# 毎時0分に実行
+crons = ["0 * * * *"]
+
+[env.production]
+# 本番環境の設定
+route = { pattern = "line-bot.kiyoshi-diary.pages.dev/*", zone_name = "kiyoshi-diary.pages.dev" }
+
+[env.development]
+# 開発環境の設定 
