@@ -42,24 +42,19 @@ export async function generateDiary(keywords: string[], env: any): Promise<strin
       temperature: 1.0,
       topP: 0.95,
       topK: 40,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 2048,
     };
 
     try {
-      const result = await model.generateContentStream({
+      const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig,
       });
 
-      let fullContent = '';
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        console.log('Received chunk:', chunkText);
-        fullContent += chunkText;
-      }
-
-      console.log('Generated diary content:', fullContent);
-      return fullContent;
+      const response = result.response;
+      const text = response.text();
+      console.log('Generated diary content:', text);
+      return text;
 
     } catch (apiError) {
       console.error('Gemini API Error:', apiError);
