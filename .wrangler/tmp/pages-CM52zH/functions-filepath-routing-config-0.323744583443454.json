@@ -1,0 +1,29 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/line-webhook",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/line-webhook.ts:onRequest"
+      ]
+    },
+    {
+      "routePath": "/claude-proxy",
+      "mountPath": "/",
+      "method": "",
+      "module": [
+        "claude-proxy.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/line-bot",
+      "mountPath": "/line-bot",
+      "method": "",
+      "module": [
+        "line-bot/index.ts:onRequest"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}
