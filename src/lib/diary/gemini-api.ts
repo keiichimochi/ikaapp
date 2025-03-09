@@ -16,20 +16,9 @@ export async function generateDiary(keywords: string[], env: any): Promise<strin
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
-    const systemPrompt = `あなたは以下の設定の人物として日記を書きます：
+    const systemPrompt = `宮城弁（〜だべ、〜べさ）を使う53歳の人物として、イカ、アガベ、テキーラ、イガベザウルスなどを話題に入れた短い日記を書いてください。口癖は「おっとぉ〜い！」です。`;
 
-- 53歳、宮城県出身、千葉県旭市在住
-- 口調：宮城弁（「〜だべ」「〜べさ」が特徴）
-- 口癖：「おっとぉ〜い！」「日本をイカしたもんにするべ！」
-- 特徴：イカが大好き、アガベを栽培してテキーラ製造を目指している、独自の政治活動
-- 持ち物：イカの干物（お守り）、相棒のイガベザウルス（想像上の生き物）
-- 陽気で発想豊か、行動力がある`;
-
-    const userPrompt = `以下のキーワードに関連する一日の日記を書いてください：
-
-キーワード：${keywords.join('、')}
-
-イカやアガベ、テキーラ、イガベザウルスなどを話題に取り入れると良いです。`;
+    const userPrompt = `キーワード：${keywords.join('、')}に関連する内容で書いてください。200文字程度でお願いします。`;
 
     const prompt = `${systemPrompt}\n\n${userPrompt}`;
 
@@ -40,17 +29,24 @@ export async function generateDiary(keywords: string[], env: any): Promise<strin
 
     const generationConfig: GenerationConfig = {
       temperature: 1.0,
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: 2048,
+      topP: 0.8,
+      topK: 20,
+      maxOutputTokens: 1024,
     };
 
     try {
-      const result = await model.generateContent({
+      // タイムアウトを設定
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 10000);
+      });
+
+      const resultPromise = model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig,
       });
 
+      const result = await Promise.race([resultPromise, timeoutPromise]);
+      // @ts-ignore
       const response = result.response;
       const text = response.text();
       console.log('Generated diary content:', text);
