@@ -10,14 +10,17 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "@cloudflare/workers-types": "^4.20250303.0",
+    "@google/generative-ai": "^0.24.0",
+    "@line/bot-sdk": "^9.7.1",
     "date-fns": "^4.1.0",
+    "dotenv": "^16.4.7",
     "gray-matter": "^4.0.3",
     "next": "15.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250303.0",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

@@ -1,5 +1,6 @@
 name = "kiyoshi-diary"
 compatibility_date = "2024-03-07"
+main = "src/line-bot/index.ts"
 
 [[d1_databases]]
 binding = "DB"
@@ -16,4 +17,14 @@ crons = ["0 * * * *"]
 route = { pattern = "line-bot.kiyoshi-diary.pages.dev/*", zone_name = "kiyoshi-diary.pages.dev" }
 
 [env.development]
-# 開発環境の設定 
+# 開発環境の設定
+
+# Pages用の設定
+[build]
+command = "npm run build"
+
+[site]
+bucket = ".next" 
+
+# Pages用のビルド出力ディレクトリ設定
+pages_build_output_dir = ".next" 

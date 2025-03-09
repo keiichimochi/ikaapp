@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude API テスター</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <style>
+    /* アニメーション用のスタイル */
+    @keyframes gradientBg {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    body {
+      font-family: 'Inter', 'Helvetica', sans-serif;
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+
+    h1 {
+      background: linear-gradient(90deg, #6366f1, #ec4899, #8b5cf6);
+      background-size: 200% 200%;
+      animation: gradientBg 6s ease infinite;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: inline-block;
+    }
+
+    #response {
+      font-family: 'Fira Code', monospace;
+      line-height: 1.6;
+    }
+
+    #loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #8b5cf6;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* フェードイン効果 */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-purple-400">Claude API テスター 🦑</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold mb-4 text-blue-400">API設定</h2>
+        
+        <div class="mb-4">
+          <label class="block text-gray-300 mb-2" for="api-key">API Key</label>
+          <input type="password" id="api-key" class="w-full bg-gray-700 text-white p-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none" placeholder="sk-ant-api03-...">
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-gray-300 mb-2" for="model">モデル</label>
+          <select id="model" class="w-full bg-gray-700 text-white p-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+            <option value="claude-3-opus-20240229">claude-3-opus-20240229</option>
+            <option value="claude-3-sonnet-20240229">claude-3-sonnet-20240229</option>
+            <option value="claude-3-haiku-20240307">claude-3-haiku-20240307</option>
+            <option value="claude-3-5-sonnet-20240620">claude-3-5-sonnet-20240620</option>
+            <option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022</option>
+          </select>
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-gray-300 mb-2" for="system-prompt">システムプロンプト</label>
+          <textarea id="system-prompt" class="w-full bg-gray-700 text-white p-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none h-24" placeholder="あなたは宮城弁を使う面白おかしい日記を書くアシスタントです..."></textarea>
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-gray-300 mb-2" for="user-prompt">ユーザープロンプト</label>
+          <textarea id="user-prompt" class="w-full bg-gray-700 text-white p-2 rounded border border-gray-600 focus:border-blue-500 focus:outline-none h-40" placeholder="高知、よさこい、祭りをテーマにした面白い日記を書いてください..."></textarea>
+        </div>
+        
+        <button id="submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 w-full">送信</button>
+      </div>
+      
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold mb-4 text-green-400">レスポンス</h2>
+        
+        <div id="loading" class="hidden flex justify-center items-center py-10">
+          <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+        </div>
+        
+        <div id="error-container" class="hidden bg-red-900 p-4 rounded mb-4">
+          <p id="error-message" class="text-white"></p>
+        </div>
+        
+        <div id="response-container" class="bg-gray-700 p-4 rounded h-[500px] overflow-y-auto">
+          <pre id="response" class="text-gray-300 whitespace-pre-wrap"></pre>
+        </div>
+        
+        <div class="mt-4 flex justify-between">
+          <button id="copy-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>コピー</button>
+          <button id="clear-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-300">クリア</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // DOM要素の取得
+      const apiKeyInput = document.getElementById('api-key');
+      const modelSelect = document.getElementById('model');
+      const systemPromptInput = document.getElementById('system-prompt');
+      const userPromptInput = document.getElementById('user-prompt');
+      const submitBtn = document.getElementById('submit-btn');
+      const responseContainer = document.getElementById('response-container');
+      const responseElement = document.getElementById('response');
+      const loadingElement = document.getElementById('loading');
+      const errorContainer = document.getElementById('error-container');
+      const errorMessage = document.getElementById('error-message');
+      const copyBtn = document.getElementById('copy-btn');
+      const clearBtn = document.getElementById('clear-btn');
+
+      // デフォルト値の設定
+      systemPromptInput.value = 'あなたは以下の設定の人物として日記を書きます：\n\n- 53歳、宮城県出身、千葉県旭市在住\n- 口調：宮城弁（「〜だべ」「〜べさ」が特徴）\n- 口癖：「おっとぉ〜い！」「日本をイカしたもんにするべ！」\n- 特徴：イカが大好き、アガベを栽培してテキーラ製造を目指している、独自の政治活動\n- 持ち物：イカの干物（お守り）、相棒のイガベザウルス（想像上の生き物）\n- 陽気で発想豊か、行動力がある';
+      userPromptInput.value = '高知県で開催される「よさこい祭り」に参加した一日の日記を書いてください。イカやアガベ、テキーラ、イガベザウルスなどを話題に取り入れると良いです。';
+
+      // ローカルストレージから設定を復元
+      const savedModel = localStorage.getItem('claude_model');
+      if (savedModel) {
+        modelSelect.value = savedModel;
+      }
+
+      const savedSystemPrompt = localStorage.getItem('claude_system_prompt');
+      if (savedSystemPrompt) {
+        systemPromptInput.value = savedSystemPrompt;
+      }
+
+      // Claude APIへのリクエスト関数
+      async function callClaudeAPI() {
+        const apiKey = apiKeyInput.value.trim();
+        const model = modelSelect.value;
+        const systemPrompt = systemPromptInput.value.trim();
+        const userPrompt = userPromptInput.value.trim();
+
+        // 入力検証
+        if (!apiKey) {
+          showError('APIキーを入力してください');
+          return;
+        }
+
+        if (!userPrompt) {
+          showError('プロンプトを入力してください');
+          return;
+        }
+
+        // 設定を保存
+        localStorage.setItem('claude_model', model);
+        localStorage.setItem('claude_system_prompt', systemPrompt);
+
+        // UI更新
+        showLoading(true);
+        hideError();
+        copyBtn.disabled = true;
+
+        try {
+          const response = await fetch('/claude-proxy', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'anthropic-api-key': apiKey
+            },
+            body: JSON.stringify({
+              model: model,
+              max_tokens: 8192,
+              temperature: 1,
+              system: systemPrompt,
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: userPrompt
+                    }
+                  ]
+                }
+              ]
+            })
+          });
+
+          // レスポンスのパース
+          const data = await response.json();
+
+          if (!response.ok) {
+            const errorMessage = data.error?.message || 'Unknown error occurred';
+            const errorType = data.error?.type || 'unknown';
+            const errorStatus = data.error?.status || response.status;
+            
+            showError(`エラー (${errorStatus}): ${errorMessage}\nType: ${errorType}`);
+            console.error('API Error:', data);
+            return;
+          }
+
+          // 成功時のレスポンス処理
+          if (data.content && data.content.length > 0) {
+            const content = data.content[0].text;
+            responseElement.textContent = content;
+            copyBtn.disabled = false;
+          } else {
+            showError('予期せぬレスポンス形式です');
+            console.error('Unexpected response format:', data);
+          }
+        } catch (error) {
+          showError(`リクエストエラー: ${error.message}`);
+          console.error('Request Error:', error);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // ユーティリティ関数
+      function showLoading(isLoading) {
+        loadingElement.style.display = isLoading ? 'flex' : 'none';
+        responseContainer.style.opacity = isLoading ? '0.5' : '1';
+        submitBtn.disabled = isLoading;
+      }
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorContainer.style.display = 'block';
+      }
+
+      function hideError() {
+        errorContainer.style.display = 'none';
+      }
+
+      // イベントリスナー
+      submitBtn.addEventListener('click', callClaudeAPI);
+
+      copyBtn.addEventListener('click', () => {
+        const textToCopy = responseElement.textContent;
+        navigator.clipboard.writeText(textToCopy)
+          .then(() => {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'コピー完了！';
+            setTimeout(() => {
+              copyBtn.textContent = originalText;
+            }, 2000);
+          })
+          .catch(err => {
+            showError(`クリップボードへのコピーに失敗しました: ${err.message}`);
+          });
+      });
+
+      clearBtn.addEventListener('click', () => {
+        responseElement.textContent = '';
+        hideError();
+        copyBtn.disabled = true;
+      });
+
+      // Enter キーでの送信
+      userPromptInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          e.preventDefault();
+          callClaudeAPI();
+        }
+      });
+    });
+  </script>
+</body>
+</html> 

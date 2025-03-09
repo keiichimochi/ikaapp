@@ -2,6 +2,10 @@ import { fetchNews } from '../../src/lib/news/brave-api';
 import { generateDiary } from '../../src/lib/diary/claude-api';
 import { saveDiary } from '../../src/lib/db/diary';
 
+interface Env {
+  LINE_CHANNEL_ACCESS_TOKEN: string;
+}
+
 interface LineUser {
   id: string;
   line_id: string;
@@ -36,16 +40,16 @@ async function getTrendingKeywords(): Promise<string[]> {
   return keywordsByDay[dayOfWeek];
 }
 
-// LINEにプッシュメッセージを送信
-async function pushMessageToLine(lineId: string, message: string) {
+// LINEにメッセージを送信
+async function pushMessage(userId: string, message: string, env: Env) {
   const response = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
+      'Authorization': `Bearer ${env.LINE_CHANNEL_ACCESS_TOKEN}`
     },
     body: JSON.stringify({
-      to: lineId,
+      to: userId,
       messages: [
         {
           type: 'text',
@@ -54,7 +58,7 @@ async function pushMessageToLine(lineId: string, message: string) {
       ]
     })
   });
-  
+
   return response.ok;
 }
 
@@ -104,7 +108,7 @@ export async function scheduled(event: any, env: any, ctx: any) {
     
     for (const user of users) {
       try {
-        await pushMessageToLine(user.line_id, message);
+        await pushMessage(user.line_id, message, env as Env);
         console.log(`Successfully delivered diary to user ${user.line_id}`);
       } catch (error) {
         console.error(`Failed to deliver diary to user ${user.line_id}:`, error);

@@ -1,9 +1,20 @@
-import { D1Database, D1PreparedStatement, D1Result } from '@cloudflare/workers-types';
+import { D1Database, D1PreparedStatement, D1Result, D1ExecResult, D1Meta } from '@cloudflare/workers-types';
 import { NewsArticle } from '../news/brave-api';
 
 // メモリ内データストア
 const diaries = new Map();
 const newsSources = new Map();
+
+// モック用のD1Meta
+const mockMeta: D1Meta = {
+  duration: 0,
+  size_after: 0,
+  rows_read: 0,
+  rows_written: 0,
+  last_row_id: 0,
+  changed_db: false,
+  changes: 0
+};
 
 class MockPreparedStatement implements D1PreparedStatement {
   private params: any[] = [];
@@ -13,6 +24,10 @@ class MockPreparedStatement implements D1PreparedStatement {
   bind(...values: any[]): D1PreparedStatement {
     this.params = values;
     return this;
+  }
+
+  async raw(): Promise<ArrayBuffer> {
+    return new ArrayBuffer(0);
   }
 
   async first<T = any>(): Promise<T | null> {
@@ -39,7 +54,7 @@ class MockPreparedStatement implements D1PreparedStatement {
       return {
         results: results as T[],
         success: true,
-        meta: {}
+        meta: mockMeta
       };
     }
     
@@ -53,14 +68,14 @@ class MockPreparedStatement implements D1PreparedStatement {
       return {
         results: results as T[],
         success: true,
-        meta: {}
+        meta: mockMeta
       };
     }
     
     return {
       results: [],
       success: true,
-      meta: {}
+      meta: mockMeta
     };
   }
 
@@ -69,7 +84,7 @@ class MockPreparedStatement implements D1PreparedStatement {
     return {
       success: true,
       results: [],
-      meta: {}
+      meta: mockMeta
     };
   }
 }
@@ -118,41 +133,21 @@ export class MockD1Database implements D1Database {
     }));
   }
 
-  async exec(sql: string): Promise<D1Result> {
+  async exec(sql: string): Promise<D1ExecResult> {
     console.log('Mock DB: exec', { sql });
     return {
       success: true,
       results: [],
-      meta: {}
+      meta: {},
+      count: 0,
+      duration: 0
     };
   }
 
   async dump(): Promise<ArrayBuffer> {
-    throw new Error('Method not implemented.');
+    return new ArrayBuffer(0);
   }
-}
 
-// シングルトンインスタンス
-export const mockDb = new MockD1Database();
-
-export interface DiaryRecord {
-  id: string;
-  date: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface NewsSourceRecord {
-  id: string;
-  diary_id: string;
-  title: string;
-  description: string | null;
-  url: string;
-  source: string;
-}
-
-export const mockDb = {
   async saveDiary(content: string, news: Omit<NewsSourceRecord, 'id' | 'diary_id'>[]): Promise<DiaryRecord> {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -176,13 +171,13 @@ export const mockDb = {
     newsRecords.forEach(news => newsSources.set(news.id, news));
 
     return diary;
-  },
+  }
 
   async getLatestDiaries(limit: number = 10): Promise<DiaryRecord[]> {
     return Array.from(diaries.values())
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, limit);
-  },
+  }
 
   async getDiaryWithNews(id: string): Promise<{ diary: DiaryRecord; news: NewsSourceRecord[] }> {
     const diary = diaries.get(id);
@@ -193,11 +188,31 @@ export const mockDb = {
     const news = Array.from(newsSources.values())
       .filter(n => n.diary_id === id);
     return { diary, news };
-  },
+  }
 
   // テスト用：データベースをクリア
   clear() {
     diaries.clear();
     newsSources.clear();
-  },
-}; 
+  }
+}
+
+// シングルトンインスタンス
+export const mockDb = new MockD1Database();
+
+export interface DiaryRecord {
+  id: string;
+  date: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NewsSourceRecord {
+  id: string;
+  diary_id: string;
+  title: string;
+  description: string | null;
+  url: string;
+  source: string;
+} 

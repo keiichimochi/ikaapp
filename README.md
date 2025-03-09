@@ -50,7 +50,7 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
 CLOUDFLARE_CLIENT_ID=your_cloudflare_client_id
 CLOUDFLARE_CLIENT_SECRET=your_cloudflare_client_secret
-LINE_CHANNEL_SECRET=your_line_channel_secret
+LINE_CHANNEL_SECRET=da35f6b7dd77d058cd0f8a143409058e
 LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token
 ```
 

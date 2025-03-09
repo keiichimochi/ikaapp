@@ -1,11 +1,7 @@
 import { getDiariesByCategory, getAllCategories } from '@/lib/diary/parser';
 import { DiaryEntry } from '@/components/diary/DiaryEntry';
 
-interface CategoryPageProps {
-  params: {
-    category: string;
-  };
-}
+type CategoryParams = Promise<{ category: string }>;
 
 export async function generateStaticParams() {
   const categories = getAllCategories();
@@ -14,8 +10,8 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function CategoryPage({ params }: CategoryPageProps) {
-  const { category } = params;
+export default async function CategoryPage({ params }: { params: CategoryParams }) {
+  const { category } = await params;
   const entries = getDiariesByCategory(category);
 
   return (
