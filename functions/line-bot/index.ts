@@ -1,5 +1,5 @@
 import { fetchNews } from '../../src/lib/news/brave-api';
-import { generateDiary } from '../../src/lib/diary/claude-api';
+import { generateDiary } from '../../src/lib/diary/gemini-api';
 import { saveDiary, getDiaryWithNews } from '../../src/lib/db/diary';
 
 interface Env {

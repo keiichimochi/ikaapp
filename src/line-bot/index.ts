@@ -107,4 +107,4 @@ async function replyMessage(replyToken: string, text: string, env: Env) {
     type: 'text',
     text: text,
   });
-} 
+}
